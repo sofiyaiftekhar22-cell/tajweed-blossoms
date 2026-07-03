@@ -133,6 +133,21 @@
   table th, table td{ text-align:left; padding:10px; border-bottom:1px solid #eef1ec; }
   table th{ color:var(--sage-dark); }
   select.student-select{ min-width:180px; }
+  .rule-chip{
+    display:inline-flex; align-items:center; gap:6px; background:#f4f7f2;
+    padding:8px 12px; border-radius:20px; margin:4px; font-size:13px;
+  }
+  .rule-chip.learned{ background:#e3ecdf; color:var(--sage-dark); font-weight:600; }
+  .resource-link{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    background:#f4f7f2; padding:10px 12px; border-radius:8px; margin-bottom:8px; flex-wrap:wrap;
+  }
+  .resource-link a{ color:var(--sage-dark); font-weight:600; text-decoration:none; }
+  .resource-link a:hover{ text-decoration:underline; }
+  .missed-row{
+    display:flex; justify-content:space-between; gap:8px; padding:8px 12px;
+    background:#faf1ef; border-radius:8px; margin-bottom:6px; font-size:13px; flex-wrap:wrap;
+  }
   @media (max-width:700px){
     .sidebar{ width:100%; min-height:auto; }
     .app.active{ flex-direction:column; }
@@ -150,10 +165,6 @@
     <input type="password" id="loginPassword" placeholder="Password">
     <button onclick="handleLogin()">Log In</button>
     <div class="login-error" id="loginError"></div>
-    <div class="demo-hint">
-      Demo teacher: <b>teacher</b> / <b>teacher123</b><br>
-      Demo student: <b>aisha</b> / <b>aisha123</b>
-    </div>
   </div>
 </div>
 
@@ -175,6 +186,20 @@
     <div id="studentView">
 
       <div class="tab-panel active" data-tab="overview">
+        <div class="card" id="announcementsCard" style="display:none;">
+          <h2>📢 Announcements</h2>
+          <div id="announcementsList"></div>
+        </div>
+
+        <div class="card">
+          <h2>👤 Student Profile</h2>
+          <p><strong>Name:</strong> <span id="profName">-</span></p>
+          <p><strong>Age:</strong> <span id="profAge">-</span></p>
+          <p><strong>Level:</strong> <span id="profLevel">-</span></p>
+          <p><strong>Current Surah:</strong> <span id="profSurah">-</span></p>
+          <p><strong>Attendance:</strong> <span id="profAttendance">-</span></p>
+        </div>
+
         <div class="stats" id="statsRow"></div>
 
         <div class="card">
@@ -194,7 +219,7 @@
         </div>
 
         <div class="card">
-          <h2> Dua of the Week</h2>
+          <h2>🌙 Dua of the Week</h2>
           <p id="duaOfWeek">-</p>
         </div>
       </div>
@@ -203,6 +228,53 @@
         <div class="card">
           <h2>Homework</h2>
           <ul class="plain" id="homeworkList"></ul>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="attendance">
+        <div class="stats" id="attendanceStatsRow"></div>
+        <div class="card">
+          <h2>Missed Classes</h2>
+          <div id="missedClassesList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="tajweed">
+        <div class="card">
+          <h2>Tajweed Rules Learned</h2>
+          <div id="tajweedRulesList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="resources">
+        <div class="card">
+          <h2>Resources</h2>
+          <input type="text" id="resourceSearchInput" placeholder="Search resources..." style="width:100%;margin-bottom:12px;" oninput="filterResources()">
+          <div id="resourcesList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="calendar">
+        <div class="card">
+          <h2>📅 Class Calendar</h2>
+          <div id="calendarList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="certificates">
+        <div class="card">
+          <h2>🏅 Certificates &amp; Milestones</h2>
+          <div id="certificatesList"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="mynotes">
+        <div class="card">
+          <h2>📔 My Notes</h2>
+          <p style="font-size:13px;color:#6b8378;">A private space for your own reflections or questions for your teacher.</p>
+          <textarea id="newSelfNote" rows="3" style="width:100%;" placeholder="Write a note..."></textarea>
+          <div class="row"><button onclick="addSelfNote()">Save Note</button></div>
+          <div id="selfNotesList" style="margin-top:14px;"></div>
         </div>
       </div>
 
@@ -259,6 +331,86 @@
         </div>
       </div>
 
+      <div class="tab-panel" data-tab="t-extra">
+        <div class="card">
+          <h2>Attendance &amp; Missed Classes</h2>
+          <div class="row">
+            <select id="attStudentPicker" class="student-select" onchange="loadExtraEditor()"></select>
+          </div>
+          <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Attendance %</label>
+            <input type="number" id="edAttendance" min="0" max="100" style="width:100px;">
+            <button onclick="saveAttendance()">Save</button></div>
+          <div class="row">
+            <input type="text" id="edMissedDate" placeholder="Date e.g. 2026-07-01">
+            <input type="text" id="edMissedReason" placeholder="Reason" style="flex:1;">
+            <button onclick="addMissedClass()">Log Missed Class</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Tajweed Rules</h2>
+          <div class="row">
+            <input type="text" id="edNewRule" placeholder="Rule name e.g. Idgham" style="flex:1;">
+            <button onclick="addTajweedRule()">Add Rule (not learned)</button>
+          </div>
+          <div id="tajweedEditorList" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="card">
+          <h2>Resources</h2>
+          <div class="row">
+            <select id="edResCategory">
+              <option value="Books on Tajweed">📗 Books on Tajweed</option>
+              <option value="Books on Islamic Studies">📘 Books on Islamic Studies</option>
+              <option value="Test Resources">📝 Test Resources</option>
+              <option value="Activity Links">🎮 Activity Links</option>
+            </select>
+            <input type="text" id="edResTitle" placeholder="Title e.g. Makharij Chart">
+            <input type="text" id="edResUrl" placeholder="Link (Drive, YouTube, PDF...)" style="flex:1;">
+            <button onclick="addResource()">Add Resource</button>
+          </div>
+          <div id="resourcesEditorList" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="card">
+          <h2>Certificates &amp; Milestones</h2>
+          <div class="row">
+            <input type="text" id="edCertTitle" placeholder="e.g. Completed Surah Al-Mulk" style="flex:1;">
+            <button onclick="awardCertificate()">Award Certificate</button>
+          </div>
+          <div id="certificatesEditorList" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="card">
+          <h2>Student's Private Notes (read-only)</h2>
+          <div id="selfNotesEditorView"></div>
+        </div>
+        <p id="extraEditorMsg" style="color:var(--sage-dark);font-size:13px;"></p>
+      </div>
+
+      <div class="tab-panel" data-tab="t-announcements">
+        <div class="card">
+          <h2>📢 Announcements (visible to all students)</h2>
+          <div class="row">
+            <input type="text" id="newAnnouncementText" placeholder="e.g. No class this Friday" style="flex:1;">
+            <button onclick="addAnnouncement()">Post Announcement</button>
+          </div>
+          <div id="announcementsEditorList" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="t-calendar">
+        <div class="card">
+          <h2>📆 Class Calendar (visible to all students)</h2>
+          <div class="row">
+            <input type="text" id="newCalDate" placeholder="Date e.g. 2026-07-10">
+            <input type="text" id="newCalTitle" placeholder="Event e.g. Ramadan begins" style="flex:1;">
+            <button onclick="addCalendarEvent()">Add Event</button>
+          </div>
+          <div id="calendarEditorList" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
       <div class="tab-panel" data-tab="t-add">
         <div class="card">
           <h2>Add New Student</h2>
@@ -298,6 +450,8 @@ function seedDataIfEmpty(){
       surah:'Surah Al-Mulk, Ayah 1-10',
       goal:'Memorize Surah Al-Mulk by end of month',
       progress:65,
+      age:10, level:'Reading Fluency Improvement',
+      surahsCompleted:4,
       homework:[
         {text:'Recite Surah Al-Mulk with Tajweed 3x', done:false},
         {text:'Revise Makharij chart', done:true}
@@ -306,12 +460,28 @@ function seedDataIfEmpty(){
       rewards:['🌟 5-day streak', '📖 Completed Juz Amma'],
       parentNotes:[{text:'Aisha recited beautifully this week, keep encouraging daily practice at home.', date:'2026-06-28'}],
       teacherNotes:[{text:'Focus more on Qalqalah letters next class.', date:'2026-06-30'}],
-      dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)'
+      dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)',
+      attendance:95,
+      missedClasses:[{date:'2026-06-15', reason:'Family trip'}],
+      tajweedRules:[
+        {name:'Noon Sakinah & Tanween', learned:true},
+        {name:'Qalqalah', learned:true},
+        {name:'Idgham', learned:false},
+        {name:'Madd Rules', learned:false}
+      ],
+      resources:[
+        {category:'Books on Tajweed', title:'Makharij Chart (PDF)', url:'https://example.com/makharij-chart.pdf'},
+        {category:'Activity Links', title:'Surah Al-Mulk Recitation', url:'https://example.com/surah-al-mulk'},
+        {category:'Books on Islamic Studies', title:'Stories of the Prophets (PDF)', url:'https://example.com/prophets-stories.pdf'},
+        {category:'Test Resources', title:'Juz Amma Practice Quiz', url:'https://example.com/juz-amma-quiz'}
+      ]
     },
     s2: {
       surah:'Surah Al-Baqarah, Ayah 1-5',
       goal:'Perfect Tajweed of Idgham rules',
       progress:40,
+      age:9, level:'Qaida Nooraniyah',
+      surahsCompleted:1,
       homework:[
         {text:'Practice Idgham examples worksheet', done:false}
       ],
@@ -319,7 +489,14 @@ function seedDataIfEmpty(){
       rewards:['🌟 3-day streak'],
       parentNotes:[],
       teacherNotes:[{text:'Needs more practice with Noon Sakinah rules.', date:'2026-06-29'}],
-      dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)'
+      dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)',
+      attendance:88,
+      missedClasses:[],
+      tajweedRules:[
+        {name:'Noon Sakinah & Tanween', learned:false},
+        {name:'Qalqalah', learned:false}
+      ],
+      resources:[]
     }
   };
   Object.keys(sampleData).forEach(id => localStorage.setItem('tb_data_'+id, JSON.stringify(sampleData[id])));
@@ -327,11 +504,30 @@ function seedDataIfEmpty(){
 
 function getUsers(){ return JSON.parse(localStorage.getItem('tb_users') || '[]'); }
 function saveUsers(u){ localStorage.setItem('tb_users', JSON.stringify(u)); }
-function getStudentData(id){ return JSON.parse(localStorage.getItem('tb_data_'+id) || 'null'); }
+function getStudentData(id){
+  const raw = JSON.parse(localStorage.getItem('tb_data_'+id) || 'null');
+  if(!raw) return null;
+  // Fill in any fields missing from older saved data so new features never break
+  const defaults = {
+    age:'', level:'', attendance:100, missedClasses:[], tajweedRules:[], resources:[], surahsCompleted:0,
+    certificates:[], selfNotes:[]
+  };
+  let patched = false;
+  Object.keys(defaults).forEach(key => {
+    if(!(key in raw)){ raw[key] = defaults[key]; patched = true; }
+  });
+  if(patched) saveStudentData(id, raw);
+  return raw;
+}
 function saveStudentData(id, data){ localStorage.setItem('tb_data_'+id, JSON.stringify(data)); }
 function getSession(){ return localStorage.getItem('tb_session'); }
 function setSession(id){ localStorage.setItem('tb_session', id); }
 function clearSession(){ localStorage.removeItem('tb_session'); }
+
+function getAnnouncements(){ return JSON.parse(localStorage.getItem('tb_announcements') || '[]'); }
+function saveAnnouncements(list){ localStorage.setItem('tb_announcements', JSON.stringify(list)); }
+function getCalendar(){ return JSON.parse(localStorage.getItem('tb_calendar') || '[]'); }
+function saveCalendar(list){ localStorage.setItem('tb_calendar', JSON.stringify(list)); }
 
 /* ---------------- CLOCK ---------------- */
 function showTime(){
@@ -376,10 +572,16 @@ function enterApp(user){
     buildNav([
       {tab:'t-overview', label:'📊 All Students'},
       {tab:'t-manage', label:'✏️ Manage Student'},
+      {tab:'t-extra', label:'📋 Attendance / Tajweed / Resources'},
+      {tab:'t-announcements', label:'📢 Announcements'},
+      {tab:'t-calendar', label:'📆 Class Calendar'},
       {tab:'t-add', label:'➕ Add Student'}
     ]);
     renderTeacherOverview();
     populateStudentPicker();
+    populateAttStudentPicker();
+    renderAnnouncementsEditor();
+    renderCalendarEditor();
   } else {
     document.getElementById('sidebarTitle').textContent = '🌷 Menu';
     document.getElementById('teacherView').style.display = 'none';
@@ -387,10 +589,16 @@ function enterApp(user){
     buildNav([
       {tab:'overview', label:'🏠 Overview'},
       {tab:'homework', label:'📝 Homework'},
+      {tab:'attendance', label:'📅 Attendance'},
+      {tab:'tajweed', label:'🔤 Tajweed Rules'},
+      {tab:'resources', label:'📁 Resources'},
       {tab:'planner', label:'📅 Weekly Planner'},
+      {tab:'calendar', label:'📆 Class Calendar'},
       {tab:'rewards', label:'🏆 Rewards'},
+      {tab:'certificates', label:'🏅 Certificates'},
       {tab:'parent', label:'👨‍👩‍👧 Parent Corner'},
-      {tab:'teachernotes', label:'🗒️ Teacher Notes'}
+      {tab:'teachernotes', label:'🗒️ Teacher Notes'},
+      {tab:'mynotes', label:'📔 My Notes'}
     ]);
     renderStudentDashboard(user);
   }
@@ -421,7 +629,14 @@ function renderStudentDashboard(user){
   const data = getStudentData(user.id);
   if(!data) return;
 
+  document.getElementById('profName').textContent = user.name;
+  document.getElementById('profAge').textContent = data.age || 'Not set';
+  document.getElementById('profLevel').textContent = data.level || 'Not set';
+  document.getElementById('profSurah').textContent = data.surah;
+  document.getElementById('profAttendance').textContent = data.attendance + '%';
+
   document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${data.surahsCompleted}</div><div class="label">Surahs Completed</div></div>
     <div class="stat-card"><div class="num">${data.progress}%</div><div class="label">Overall Progress</div></div>
     <div class="stat-card"><div class="num">${data.homework.filter(h=>!h.done).length}</div><div class="label">Homework Pending</div></div>
     <div class="stat-card"><div class="num">${data.rewards.length}</div><div class="label">Rewards Earned</div></div>
@@ -471,6 +686,97 @@ function renderStudentDashboard(user){
   document.getElementById('teacherNotesList').innerHTML = data.teacherNotes.length
     ? data.teacherNotes.map(n => `<div class="note">${n.text}<div class="meta">${n.date}</div></div>`).join('')
     : '<p style="color:#8a988f;">No notes yet.</p>';
+
+  document.getElementById('attendanceStatsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${data.attendance}%</div><div class="label">Attendance</div></div>
+    <div class="stat-card"><div class="num">${data.missedClasses.length}</div><div class="label">Missed Classes</div></div>
+  `;
+  document.getElementById('missedClassesList').innerHTML = data.missedClasses.length
+    ? data.missedClasses.map(m => `<div class="missed-row"><span>${m.date}</span><span>${m.reason}</span></div>`).join('')
+    : '<p style="color:#8a988f;">No missed classes recorded. Great attendance! 🌟</p>';
+
+  document.getElementById('tajweedRulesList').innerHTML = data.tajweedRules.length
+    ? data.tajweedRules.map(r => `<span class="rule-chip ${r.learned?'learned':''}">${r.learned?'✅':'⏳'} ${r.name}</span>`).join('')
+    : '<p style="color:#8a988f;">No rules added yet.</p>';
+
+  document.getElementById('resourcesList').innerHTML = renderGroupedResources(data.resources);
+
+  // Announcements (global)
+  const announcements = getAnnouncements();
+  const annCard = document.getElementById('announcementsCard');
+  if(announcements.length){
+    annCard.style.display = 'block';
+    document.getElementById('announcementsList').innerHTML = announcements
+      .map(a => `<div class="note">${a.text}<div class="meta">${a.date}</div></div>`).join('');
+  } else {
+    annCard.style.display = 'none';
+  }
+
+  // Class calendar (global)
+  const calendar = getCalendar();
+  document.getElementById('calendarList').innerHTML = calendar.length
+    ? calendar.map(c => `<div class="missed-row"><span>${c.date}</span><span>${c.title}</span></div>`).join('')
+    : '<p style="color:#8a988f;">No upcoming events yet.</p>';
+
+  // Certificates
+  document.getElementById('certificatesList').innerHTML = data.certificates.length
+    ? data.certificates.map(c => `
+        <div class="card" style="border:2px dashed var(--gold); text-align:center; margin-top:12px;">
+          <div style="font-size:32px;">🏅</div>
+          <h2 style="margin:8px 0 4px;">Certificate of Achievement</h2>
+          <p style="font-size:15px;">Awarded to <strong>${user.name}</strong></p>
+          <p>${c.title}</p>
+          <p class="meta" style="font-size:12px;color:#8a988f;">${c.date}</p>
+        </div>
+      `).join('')
+    : '<p style="color:#8a988f;">No certificates awarded yet — keep learning! 🌱</p>';
+
+  // Self notes
+  renderSelfNotes(data);
+}
+
+function renderSelfNotes(data){
+  document.getElementById('selfNotesList').innerHTML = data.selfNotes.length
+    ? data.selfNotes.slice().reverse().map(n => `<div class="note">${n.text}<div class="meta">${n.date}</div></div>`).join('')
+    : '<p style="color:#8a988f;">No notes yet.</p>';
+}
+
+function addSelfNote(){
+  const session = getSession();
+  const input = document.getElementById('newSelfNote');
+  if(!input.value.trim()) return;
+  const data = getStudentData(session);
+  data.selfNotes.push({text: input.value.trim(), date: new Date().toISOString().slice(0,10)});
+  saveStudentData(session, data);
+  input.value = '';
+  renderSelfNotes(data);
+}
+
+function filterResources(){
+  const query = document.getElementById('resourceSearchInput').value.trim().toLowerCase();
+  const session = getSession();
+  const data = getStudentData(session);
+  const filtered = query ? data.resources.filter(r => r.title.toLowerCase().includes(query)) : data.resources;
+  document.getElementById('resourcesList').innerHTML = renderGroupedResources(filtered);
+}
+
+function renderGroupedResources(resources){
+  if(!resources.length) return '<p style="color:#8a988f;">No resources shared yet.</p>';
+  const categories = ['Books on Tajweed', 'Books on Islamic Studies', 'Test Resources', 'Activity Links'];
+  const icons = {'Books on Tajweed':'📗','Books on Islamic Studies':'📘','Test Resources':'📝','Activity Links':'🎮'};
+  let html = '';
+  categories.forEach(cat => {
+    const items = resources.filter(r => (r.category || 'Uncategorized') === cat);
+    if(!items.length) return;
+    html += `<h3 style="margin-top:16px;color:var(--sage-dark);font-size:15px;">${icons[cat] || ''} ${cat}</h3>`;
+    html += items.map(r => `<div class="resource-link"><a href="${r.url}" target="_blank" rel="noopener">${r.title}</a></div>`).join('');
+  });
+  const uncategorized = resources.filter(r => !r.category);
+  if(uncategorized.length){
+    html += `<h3 style="margin-top:16px;color:var(--sage-dark);font-size:15px;">Other</h3>`;
+    html += uncategorized.map(r => `<div class="resource-link"><a href="${r.url}" target="_blank" rel="noopener">${r.title}</a></div>`).join('');
+  }
+  return html;
 }
 
 /* ---------------- TEACHER VIEW ---------------- */
@@ -500,6 +806,12 @@ function loadStudentIntoEditor(){
   const data = getStudentData(id);
   const area = document.getElementById('editorArea');
   area.innerHTML = `
+    <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Age</label>
+      <input type="number" id="edAge" value="${data.age || ''}" style="width:100px;"></div>
+    <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Level</label>
+      <input type="text" id="edLevel" value="${data.level || ''}" style="flex:1;"></div>
+    <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Surahs Completed</label>
+      <input type="number" id="edSurahsCompleted" value="${data.surahsCompleted || 0}" min="0" style="width:100px;"></div>
     <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Current Surah</label>
       <input type="text" id="edSurah" value="${data.surah}" style="flex:1;"></div>
     <div class="row"><label style="width:100%;font-size:13px;color:#6b8378;">Current Goal</label>
@@ -523,6 +835,9 @@ function loadStudentIntoEditor(){
 
 function saveEditorBasics(id){
   const data = getStudentData(id);
+  data.age = document.getElementById('edAge').value;
+  data.level = document.getElementById('edLevel').value;
+  data.surahsCompleted = Math.max(0, parseInt(document.getElementById('edSurahsCompleted').value) || 0);
   data.surah = document.getElementById('edSurah').value;
   data.goal = document.getElementById('edGoal').value;
   data.progress = Math.max(0, Math.min(100, parseInt(document.getElementById('edProgress').value) || 0));
@@ -562,6 +877,206 @@ function addReward(id){
   document.getElementById('editorMsg').textContent = 'Reward added ✅';
 }
 
+/* ---------------- ATTENDANCE / TAJWEED / RESOURCES (teacher) ---------------- */
+function populateAttStudentPicker(){
+  const students = getUsers().filter(u => u.role === 'student');
+  const picker = document.getElementById('attStudentPicker');
+  picker.innerHTML = students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  loadExtraEditor();
+}
+
+function loadExtraEditor(){
+  const id = document.getElementById('attStudentPicker').value;
+  if(!id) return;
+  const data = getStudentData(id);
+  document.getElementById('edAttendance').value = data.attendance;
+  renderTajweedEditor(id);
+  renderResourcesEditor(id);
+  renderCertificatesEditor(id);
+  renderSelfNotesTeacherView(id);
+}
+
+function saveAttendance(){
+  const id = document.getElementById('attStudentPicker').value;
+  const data = getStudentData(id);
+  data.attendance = Math.max(0, Math.min(100, parseInt(document.getElementById('edAttendance').value) || 0));
+  saveStudentData(id, data);
+  document.getElementById('extraEditorMsg').textContent = 'Attendance saved ✅';
+  renderTeacherOverview();
+}
+
+function addMissedClass(){
+  const id = document.getElementById('attStudentPicker').value;
+  const dateEl = document.getElementById('edMissedDate');
+  const reasonEl = document.getElementById('edMissedReason');
+  if(!dateEl.value.trim() || !reasonEl.value.trim()) return;
+  const data = getStudentData(id);
+  data.missedClasses.push({date: dateEl.value.trim(), reason: reasonEl.value.trim()});
+  saveStudentData(id, data);
+  dateEl.value = ''; reasonEl.value = '';
+  document.getElementById('extraEditorMsg').textContent = 'Missed class logged ✅';
+}
+
+function renderTajweedEditor(id){
+  const data = getStudentData(id);
+  const el = document.getElementById('tajweedEditorList');
+  el.innerHTML = data.tajweedRules.length ? data.tajweedRules.map((r, idx) => `
+    <div class="missed-row">
+      <span>${r.name}</span>
+      <button class="secondary" onclick="toggleRule('${id}', ${idx})">${r.learned ? 'Mark Not Learned' : 'Mark Learned'}</button>
+    </div>
+  `).join('') : '<p style="color:#8a988f;">No rules added yet.</p>';
+}
+
+function addTajweedRule(){
+  const id = document.getElementById('attStudentPicker').value;
+  const input = document.getElementById('edNewRule');
+  if(!input.value.trim()) return;
+  const data = getStudentData(id);
+  data.tajweedRules.push({name: input.value.trim(), learned:false});
+  saveStudentData(id, data);
+  input.value = '';
+  renderTajweedEditor(id);
+}
+
+function toggleRule(id, idx){
+  const data = getStudentData(id);
+  data.tajweedRules[idx].learned = !data.tajweedRules[idx].learned;
+  saveStudentData(id, data);
+  renderTajweedEditor(id);
+}
+
+function renderResourcesEditor(id){
+  const data = getStudentData(id);
+  const el = document.getElementById('resourcesEditorList');
+  el.innerHTML = data.resources.length ? data.resources.map((r, idx) => `
+    <div class="resource-link">
+      <span><span style="color:#8a988f;font-size:12px;">${r.category || 'Uncategorized'}</span><br>
+      <a href="${r.url}" target="_blank" rel="noopener">${r.title}</a></span>
+      <button class="secondary" onclick="removeResource('${id}', ${idx})">Remove</button>
+    </div>
+  `).join('') : '<p style="color:#8a988f;">No resources yet.</p>';
+}
+
+function addResource(){
+  const id = document.getElementById('attStudentPicker').value;
+  const categoryEl = document.getElementById('edResCategory');
+  const titleEl = document.getElementById('edResTitle');
+  const urlEl = document.getElementById('edResUrl');
+  if(!titleEl.value.trim() || !urlEl.value.trim()) return;
+  const data = getStudentData(id);
+  data.resources.push({category: categoryEl.value, title: titleEl.value.trim(), url: urlEl.value.trim()});
+  saveStudentData(id, data);
+  titleEl.value = ''; urlEl.value = '';
+  renderResourcesEditor(id);
+}
+
+function removeResource(id, idx){
+  const data = getStudentData(id);
+  data.resources.splice(idx, 1);
+  saveStudentData(id, data);
+  renderResourcesEditor(id);
+}
+
+/* ---------------- CERTIFICATES ---------------- */
+function renderCertificatesEditor(id){
+  const data = getStudentData(id);
+  const el = document.getElementById('certificatesEditorList');
+  el.innerHTML = data.certificates.length ? data.certificates.map((c, idx) => `
+    <div class="missed-row">
+      <span>🏅 ${c.title} <span style="color:#8a988f;">(${c.date})</span></span>
+      <button class="secondary" onclick="removeCertificate('${id}', ${idx})">Remove</button>
+    </div>
+  `).join('') : '<p style="color:#8a988f;">No certificates awarded yet.</p>';
+}
+
+function awardCertificate(){
+  const id = document.getElementById('attStudentPicker').value;
+  const input = document.getElementById('edCertTitle');
+  if(!input.value.trim()) return;
+  const data = getStudentData(id);
+  data.certificates.push({title: input.value.trim(), date: new Date().toISOString().slice(0,10)});
+  saveStudentData(id, data);
+  input.value = '';
+  renderCertificatesEditor(id);
+  document.getElementById('extraEditorMsg').textContent = 'Certificate awarded ✅';
+}
+
+function removeCertificate(id, idx){
+  const data = getStudentData(id);
+  data.certificates.splice(idx, 1);
+  saveStudentData(id, data);
+  renderCertificatesEditor(id);
+}
+
+/* ---------------- VIEW STUDENT SELF NOTES (teacher, read-only) ---------------- */
+function renderSelfNotesTeacherView(id){
+  const data = getStudentData(id);
+  const el = document.getElementById('selfNotesEditorView');
+  el.innerHTML = data.selfNotes.length
+    ? data.selfNotes.slice().reverse().map(n => `<div class="note">${n.text}<div class="meta">${n.date}</div></div>`).join('')
+    : '<p style="color:#8a988f;">This student hasn\\'t written any notes yet.</p>';
+}
+
+/* ---------------- ANNOUNCEMENTS (global) ---------------- */
+function renderAnnouncementsEditor(){
+  const list = getAnnouncements();
+  const el = document.getElementById('announcementsEditorList');
+  el.innerHTML = list.length ? list.map((a, idx) => `
+    <div class="missed-row">
+      <span>${a.text} <span style="color:#8a988f;">(${a.date})</span></span>
+      <button class="secondary" onclick="removeAnnouncement(${idx})">Remove</button>
+    </div>
+  `).join('') : '<p style="color:#8a988f;">No announcements posted yet.</p>';
+}
+
+function addAnnouncement(){
+  const input = document.getElementById('newAnnouncementText');
+  if(!input.value.trim()) return;
+  const list = getAnnouncements();
+  list.unshift({text: input.value.trim(), date: new Date().toISOString().slice(0,10)});
+  saveAnnouncements(list);
+  input.value = '';
+  renderAnnouncementsEditor();
+}
+
+function removeAnnouncement(idx){
+  const list = getAnnouncements();
+  list.splice(idx, 1);
+  saveAnnouncements(list);
+  renderAnnouncementsEditor();
+}
+
+/* ---------------- CLASS CALENDAR (global) ---------------- */
+function renderCalendarEditor(){
+  const list = getCalendar();
+  const el = document.getElementById('calendarEditorList');
+  el.innerHTML = list.length ? list.map((c, idx) => `
+    <div class="missed-row">
+      <span>${c.date} — ${c.title}</span>
+      <button class="secondary" onclick="removeCalendarEvent(${idx})">Remove</button>
+    </div>
+  `).join('') : '<p style="color:#8a988f;">No events added yet.</p>';
+}
+
+function addCalendarEvent(){
+  const dateEl = document.getElementById('newCalDate');
+  const titleEl = document.getElementById('newCalTitle');
+  if(!dateEl.value.trim() || !titleEl.value.trim()) return;
+  const list = getCalendar();
+  list.push({date: dateEl.value.trim(), title: titleEl.value.trim()});
+  saveCalendar(list);
+  dateEl.value = ''; titleEl.value = '';
+  renderCalendarEditor();
+}
+
+function removeCalendarEvent(idx){
+  const list = getCalendar();
+  list.splice(idx, 1);
+  saveCalendar(list);
+  renderCalendarEditor();
+}
+
 function addNewStudent(){
   const name = document.getElementById('newStuName').value.trim();
   const username = document.getElementById('newStuUser').value.trim();
@@ -582,9 +1097,10 @@ function addNewStudent(){
   saveUsers(users);
   saveStudentData(id, {
     surah:'Not started yet', goal:'Set a goal for this student',
-    progress:0, homework:[], weeklyPlan:{Mon:'',Tue:'',Wed:'',Thu:'',Fri:'',Sat:'',Sun:''},
+    progress:0, age:'', level:'', surahsCompleted:0, certificates:[], selfNotes:[], homework:[], weeklyPlan:{Mon:'',Tue:'',Wed:'',Thu:'',Fri:'',Sat:'',Sun:''},
     rewards:[], parentNotes:[], teacherNotes:[],
-    dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)'
+    dua:'Rabbi zidni ilma — "My Lord, increase me in knowledge." (Surah Taha 20:114)',
+    attendance:100, missedClasses:[], tajweedRules:[], resources:[]
   });
   msg.style.color = 'var(--sage-dark)';
   msg.textContent = 'Student added ✅';
